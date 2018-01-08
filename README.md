@@ -91,7 +91,7 @@ a new directory or on a new fork, please follow these steps:
 5.  Select your Apps Script project that you previously created (blue icon with white arrow)
 6.  Copy your Project ID from the address bar - your project id is the random string after `/d/` and before `/edit`
 7.  Go to your command-line window and run `gapps add dev <project id>`.  This will add a deployment target called "dev"
-8.  Run `gapps deply dev` to push files to Google's environment
+8.  Run `gapps deploy dev` to push files to Google's environment
 9.  If you don't see "Great success!", go to a corner and cry
 10. Go back to your web browser with your Google Drive project and refresh - you should see `code.gs` and several other HTML files
 

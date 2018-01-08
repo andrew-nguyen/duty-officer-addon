@@ -223,10 +223,11 @@ function populateAllCall() {
 
   // sets up header row
   sheet.appendRow(COLUMNS);
-
+  
   // bolds the first two rows
   sheet.getRange("A1:Z2").setFontWeight("bold");
-
+  sheet.setFrozenRows(2);
+  
   var currentRow = 3; // ignore header and count row
 
   // cycles through everyone and appends a new row for each
@@ -258,7 +259,7 @@ function populateAllCall() {
 
   // Resizes all columns A-Z
   for (var i=1; i<27; i++) {
-    sheet.autoResizeColumn(i);
+  sheet.autoResizeColumn(i);
   }
 }
 
