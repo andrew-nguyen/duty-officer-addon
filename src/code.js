@@ -198,7 +198,10 @@ function populateAllCall() {
   // remove this function call if trying to test add-on without
   // deploying it since it uses functionality that is not supported
   // in test mode
-  //setupCheckResponseTrigger();
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!
+  // THIS SHOULD BE ENABLED WHEN COMMITTING TO MASTER / UPSTREAM
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!
+  setupCheckResponseTrigger();
 
   var all_call = getAllCall();
   var spreadsheet = SpreadsheetApp.getActive();
