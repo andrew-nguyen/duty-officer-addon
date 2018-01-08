@@ -5,7 +5,7 @@
    */
   $(function() {
     // Assign handler functions to dialog elements here, if needed.
-    $('#save-button').click(onExecuteClick);
+    $('#send-button').click(onExecuteClick);
 
     // Call the server here to retrieve any information needed to build
     // the dialog, if necessary.
@@ -21,26 +21,29 @@
     this.disabled = true;
 
     // Gather any information that needs to be sent to the server here.
-    var token = $('#token-field').val();
-    showStatus('Saving...');
+    var to = $('#to-field').val();
+    var subject = $('#subject-field').val();
+    var body = $('#message-field').val();
+
+    showStatus('Sending...');
 
     // Send the value to the server and handle the response.
     google.script.run
         .withSuccessHandler(
           function(msg, element) {
             // Respond to success conditions here.
-            showStatus('Token saved.');
+            showStatus("Message sent, DO account CC'ed.");
             element.disabled = false;
             google.script.host.close();
           })
         .withFailureHandler(
           function(msg, element) {
             // Respond to failure conditions here.
-            showStatus('Saving token failed: ' + msg, 'error');
+            showStatus('Sending msg failed: ' + msg, 'error');
             element.disabled = false;
           })
         .withUserObject(this)
-        .saveToken(token);
+        .sendEmail(to, subject, body);
   }
 
   /**
