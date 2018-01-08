@@ -8,35 +8,59 @@ var BRIGHT_GREEN = "#48FF05";
  */
 
 var TOKEN_DIALOG_TITLE = 'Set D4H API Token';
+var EMAIL_DIALOG_TITLE = 'Email Responding Roster';
 var SIDEBAR_TITLE = 'Example Sidebar';
+
+var COLUMNS = [
+  "Name",
+  "Position",
+  "Badge",
+  "Responding",
+  "Marshall or DR",
+  "ETA ",
+  "Time Out",
+  "Time In",
+  "Role ",
+  "Home Safe",
+  "Email",
+  "Home Phone",
+  "Mobile Phone",
+  "Work Phone"
+];
+
+var CALLOUT_SHEET_NAME = "Callout";
+var RESPONDING_SHEET_NAME = "Carpool"
 
 function test() {
   var t = 2130;
   String(t).trim();
 }
 
+/* Retrieves token from user property storage - this is stored on a per-user
+ * basis
+ */
 function getToken() {
-  var token = PropertiesService.getUserProperties().getProperty("D4H_TOKEN"); 
+  var token = PropertiesService.getUserProperties().getProperty("D4H_TOKEN");
   Logger.log("D4H token: " + token);
   return token;
 }
 
 /* Saves the specified token to the user's properties */
 function saveToken(token) {
-  PropertiesService.getUserProperties().setProperty("D4H_TOKEN", token); 
+  PropertiesService.getUserProperties().setProperty("D4H_TOKEN", token);
 }
 
 /* Checks the responses anytime the sheet is edited and makes appropriate
  * formatting changes
- * 
+ *
  * Specifically:
  * - Checks the "Responding" string and sets the background color accordingly
  */
 function checkResponse(e) {
   var sheet = SpreadsheetApp.getActiveSheet();
-  
+
   /* checks response, if Y, turns cell green */
-  /* Andy: I tried changing only those fields that 
+  /* Andy: I tried changing only those fields that
    * come in as part of e.range and it's not stable
    * Not sure what the problem is so just looping for now
    * There was no noticeable speed increase changing only
@@ -49,24 +73,37 @@ function checkResponse(e) {
     // sets it to green if Y
     if (respondingValue == "Y") {
       cell.setBackground(BRIGHT_GREEN);
-      
+
+      // copied to case "L" below
       var homeSafe = range.getCell(i, 7);
       if (String(homeSafe.getValue()).trim() != "") {
         homeSafe.setBackground("white");
       }
       else {
-        homeSafe.setBackground("orange"); 
+        homeSafe.setBackground("orange");
       }
     }
     else if (respondingValue == "N") {
-      cell.setBackground("red"); 
+      cell.setBackground("red");
+    }
+    else if (respondingValue == "L") {
+      cell.setBackground("#9EC0FF") // Light blue
+   
+      // copied from case "Y" above
+      var homeSafe = range.getCell(i, 7);
+      if (String(homeSafe.getValue()).trim() != "") {
+        homeSafe.setBackground("white");
+      }
+      else {
+        homeSafe.setBackground("orange");
+      }
     }
     // in case we set it back to D4H
     else if (respondingValue == D4H_STRING) {
-      cell.setBackground("red"); 
+      cell.setBackground("red");
     }
     else {
-      cell.setBackground("white"); 
+      cell.setBackground("white");
     }
     // sets everything to upper case
     cell.setValue(respondingValue);
@@ -87,10 +124,10 @@ function setupCheckResponseTrigger() {
   for (var i=0; i<triggers.length; i++) {
     var t = triggers[i];
     Logger.log("type(t)----->" + typeof t);
-    ScriptApp.deleteTrigger(t); 
+    ScriptApp.deleteTrigger(t);
   }
-  
-  /* Can't seem to register non-time-driven triggers in UI so 
+
+  /* Can't seem to register non-time-driven triggers in UI so
    * adding programmatically.  But, don't need this anymore
    * once the trigger has been added
    */
@@ -109,6 +146,8 @@ function onOpen(e) {
   SpreadsheetApp.getUi()
       .createAddonMenu()
       .addItem("Populate Call Sheet", 'populateAllCall')
+      .addItem("Coordinate Transportation", "createTransportationSheet")
+      .addItem("Email Responding Roster", "showEmailDialog")
       .addItem("Set D4H Token", "showTokenDialog")
       //.addItem('Show sidebar', 'showSidebar')
       .addToUi();
@@ -116,7 +155,7 @@ function onOpen(e) {
 
 /* Takes a person dictionary and phonetype key
  * If phonetype isn't defined, returns the emptry string
- * Otherwise, returns a formatted phone number, dropping the 
+ * Otherwise, returns a formatted phone number, dropping the
  * leading 1 if present
  */
 function phoneFormat(person, phonetype) {
@@ -132,7 +171,7 @@ function phoneFormat(person, phonetype) {
     return person[phonetype];
   }
   else {
-    return ""; 
+    return "";
   }
 }
 
@@ -140,74 +179,72 @@ function phoneFormat(person, phonetype) {
 function dateString(date) {
   var day = date.getDate();
   if (day < 10) {
-    day = "0" + day; 
+    day = "0" + day;
   }
   var month = date.getMonth() + 1;
   if (month < 10) {
-    month = "0" + month; 
+    month = "0" + month;
   }
   return date.getFullYear() + "-" + month + "-" + day;
 }
 
-/* Takes the list of person dictionaries and populates the 
+/* Takes the list of person dictionaries and populates the
  * spreadsheet
- * 
- * This function does the bulk of the work in creating 
+ *
+ * This function does the bulk of the work in creating
  * the spreadsheet
  */
 function populateAllCall() {
   // remove this function call if trying to test add-on without
   // deploying it since it uses functionality that is not supported
   // in test mode
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!
+  // THIS SHOULD BE ENABLED WHEN COMMITTING TO MASTER / UPSTREAM
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!
   setupCheckResponseTrigger();
-  
+
   var all_call = getAllCall();
   var spreadsheet = SpreadsheetApp.getActive();
   var sheet = SpreadsheetApp.getActiveSheet();
-  
+
   // names the spreadsheet "SMCSAR YYYY-MM-DD "
   var today = new Date();
   var spreadsheetName = "SMCSAR " + dateString(today) + " ";
   spreadsheet.rename(spreadsheetName);
-  
-  // perhaps we want to remove this since users should be 
+
+  // perhaps we want to remove this since users should be
   // starting with a clean spreadsheet... may consider
   // displaying an error if it's not an empty sheet
   sheet.clear();
-  
+
+  sheet.setName(CALLOUT_SHEET_NAME);
+
   // sets up the counting of available responders
   sheet.appendRow([
     "",
     "",
     "Available:",
-    "=COUNTIF(D2:D,\"Y\")"
+    "=COUNTIF(D3:D,\"Y\")",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "=COUNTA(J3:J)",
+    "are home safe"
   ]);
   sheet.getRange("C1:D1").setBackground(BRIGHT_GREEN);
+  sheet.getRange("J1:K1").setBackground('orange');
+
 
   // sets up header row
-  sheet.appendRow([
-    "Name",
-    "Position",
-    "Badge",
-    "Responding",
-    "Marshall or DR",
-    "ETA ",
-    "Time In",
-    "Time Out",
-    "Role ",
-    "Home Safe",
-    "Email",
-    "Home Phone",
-    "Mobile Phone",
-    "Work Phone"
-  ]);
-  
-  // bold and freeze the first two rows
+  sheet.appendRow(COLUMNS);
+
+  // bolds the first two rows
   sheet.getRange("A1:Z2").setFontWeight("bold");
-  sheet.setFrozenRows(2);
-  
+
   var currentRow = 3; // ignore header and count row
-  
+
   // cycles through everyone and appends a new row for each
   for (var i=0; i<all_call.length; i++) {
     var person = all_call[i];
@@ -218,8 +255,8 @@ function populateAllCall() {
       person.responding,
       "", // marshall/dr
       "", // eta
-      "", // time in
       "", // time out
+      "", // time in
       "", // role
       "", // home safe
       person.email,
@@ -227,17 +264,17 @@ function populateAllCall() {
       phoneFormat(person, "mobilephone"),
       phoneFormat(person, "workphone")
     ]);
-    
+
     // sets those off call in D4H to red
     if (person.responding == D4H_STRING) {
        sheet.getRange(currentRow, 4).setBackground("red");
     }
     currentRow++;
   }
-  
+
   // Resizes all columns A-Z
   for (var i=1; i<27; i++) {
-  sheet.autoResizeColumn(i);
+    sheet.autoResizeColumn(i);
   }
 }
 
@@ -247,16 +284,19 @@ function getMembers(on_call, offset, limit) {
   on_call = typeof on_call !== 'undefined' ? on_call : "off";
   offset = typeof offset !== 'undefined' ? offset : 0;
   limit = typeof limit !== 'undefined' ? limit : 25;
-  
+
   var url = Utilities.formatString('https://api.d4h.org:443/v2/team/members?'
-    + 'access_token=%s'
-    + '&on_call=%s'
+    + 'on_call=%s'
     + '&offset=%s'
-    + '&limit=%s', getToken(), on_call, offset, limit);
+    + '&limit=%s', on_call, offset, limit);
+
+  var options = {
+    'headers': {'Authorization': 'Bearer ' + getToken()}
+  }
   
-  var response = UrlFetchApp.fetch(url);
+  var response = UrlFetchApp.fetch(url, options);
   //Logger.log(response);
-  
+
   // Returns JSON without any explicit processing
   return JSON.parse(response.getContentText());
 }
@@ -277,8 +317,8 @@ function getRoster(on_off) {
   do {
     var response = getMembers(on_off, offset, limit);
     var data = response.data;
-    
-    // map over people to trim names since some have 
+
+    // map over people to trim names since some have
     // spurious whitespace
     people = data.map(function (e) {
       e.name = e.name.trim();
@@ -305,14 +345,89 @@ function getAllCall() {
     person.responding = D4H_STRING;
     return person
   });
-    
+
   var everyone = on_call.concat(off_call).filter(isOperational);
-  
+
   everyone = everyone.sort(function (left, right) {
     return left.name.localeCompare(right.name);
   });
-  
+
   return everyone;
+}
+
+
+function getResponders() {
+  var num_people = getAllCall().length;
+
+  var spreadsheet = SpreadsheetApp.getActive();
+
+  var sheet = spreadsheet.getSheetByName(CALLOUT_SHEET_NAME);
+
+  var responders = sheet.getRange(3, 1, num_people, COLUMNS.length).getValues();
+  responders = responders.filter(function (row) {
+    return row[3] == "Y";
+  })
+
+  return responders;
+}
+
+/**
+ * Goes through the call sheet and determines who is a "Y" in Responding and
+ * creates a new sheet (tab) to facilitate transportation coordination.
+ */
+function createTransportationSheet() {
+  var num_people = getAllCall().length;
+
+  var spreadsheet = SpreadsheetApp.getActive();
+  var sheet = spreadsheet.getSheetByName(CALLOUT_SHEET_NAME);
+
+  var responders = getResponders();
+
+  var responder_sheet_name = RESPONDING_SHEET_NAME;
+  var responder_sheet = spreadsheet.getSheetByName(responder_sheet_name);
+  if (responder_sheet != null) {
+    spreadsheet.deleteSheet(responder_sheet);
+  }
+  responder_sheet = spreadsheet.insertSheet(responder_sheet_name);
+
+  responder_sheet.appendRow([
+    "CARPOOL"
+  ]);
+
+  responder_sheet.appendRow([
+    "Name",
+    "Position",
+    "Badge",
+    "Email",
+    "Mobile Phone",
+    "Have Car?",
+    "Leaving From?",
+    "Leaving When?",
+    "# Passenger Seats Avail",
+    "Passenger 1",
+    "Passenger 2",
+    "Passenger 3",
+    "Passenger 4"
+  ]);
+
+  // bolds the first two rows
+  responder_sheet.getRange("A1:Z2").setFontWeight("bold");
+
+  for (var i=0; i<responders.length; i++) {
+    var r = responders[i];
+    responder_sheet.appendRow([
+      r[0], // name
+      r[1], // position
+      r[2], // Badge
+      r[10], // email
+      r[12], // mobile phone
+    ]);
+  }
+
+  // Resizes all columns A-Z
+  for (var i=1; i<27; i++) {
+    responder_sheet.autoResizeColumn(i);
+  }
 }
 
 /**
@@ -350,6 +465,31 @@ function showTokenDialog() {
       .setWidth(400)
       .setHeight(190);
   SpreadsheetApp.getUi().showModalDialog(ui, TOKEN_DIALOG_TITLE);
+}
+
+/**
+ * Opens a dialog to send email to OESL. The dialog structure is described in
+ * the OESL-Email-Dialog.html project file.
+ */
+function showEmailDialog() {
+  var ui = HtmlService.createTemplateFromFile('OESL-Email-Dialog')
+
+  var responders = getResponders();
+
+  var message = "\nSMCSAR is sending " + responders.length + " to [INSERT SEARCH NAME/LOCATION] for [INSERT DATES]\n\n"
+
+  for (var i=0; i<responders.length; i++) {
+    var r = responders[i];
+    message += r[0] + " - " + r[12] + " - " + r[10] + "\n"
+  }
+
+  ui.message_body = message;
+
+  ui = ui.evaluate()
+         .setWidth(600)
+         .setHeight(400);
+
+  SpreadsheetApp.getUi().showModalDialog(ui, EMAIL_DIALOG_TITLE);
 }
 
 /**
@@ -393,3 +533,14 @@ function modifySheets(action) {
   }
 }
 
+/* Used to send emails to OES-L or anyone else with those responding
+ * and their phone/email
+ */
+function sendEmail(email, subject, body) {
+  MailApp.sendEmail({
+    to: email,
+    subject: subject,
+    htmlBody: body,
+    cc: "dutyofficer@sanmateosar.org"
+  })
+}
