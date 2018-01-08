@@ -1,0 +1,31 @@
+<!-- Use a templated HTML printing scriptlet to import common stylesheet. -->
+<?!= HtmlService.createHtmlOutputFromFile('Stylesheet').getContent(); ?>
+
+<!-- Below is the HTML code that defines the dialog element structure. -->
+<div>
+  <p>Send email for MA deployment.</p>
+  <div class="block" class="dialog-elements">
+    <label for="dialog-action-select">
+      To (use commas to separate multiple addresses):
+    </label>
+    <input id="to-field" class="width-100" type="text">
+    <label for="dialog-action-select">
+      Subject:
+    </label>
+    <input id="subject-field" class="width-100" type="text">
+    <label for="dialog-action-select">
+      Message:
+    </label>
+    <textarea id="message-field" class="width-100" type="text" rows="10">
+      <?= message_body ?>
+    </textarea>
+  </div>
+  <div class="block" id="dialog-button-bar">
+      <button class="action" id="send-button">Send</button>
+      <button id="dialog-cancel-button" onclick="google.script.host.close()">Cancel</button>
+  </div>
+  <div id="dialog-status"></div>
+</div>
+
+<!-- Use a templated HTML printing scriptlet to import JavaScript. -->
+<?!= HtmlService.createHtmlOutputFromFile('OESL-Email-DialogJS').getContent(); ?>

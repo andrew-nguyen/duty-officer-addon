@@ -8,6 +8,7 @@ var BRIGHT_GREEN = "#48FF05";
  */
 
 var TOKEN_DIALOG_TITLE = 'Set D4H API Token';
+var EMAIL_DIALOG_TITLE = 'Email Responding Roster';
 var SIDEBAR_TITLE = 'Example Sidebar';
 
 var COLUMNS = [
@@ -35,6 +36,9 @@ function test() {
   String(t).trim();
 }
 
+/* Retrieves token from user property storage - this is stored on a per-user
+ * basis
+ */
 function getToken() {
   var token = PropertiesService.getUserProperties().getProperty("D4H_TOKEN");
   Logger.log("D4H token: " + token);
@@ -129,8 +133,9 @@ function onOpen(e) {
   SpreadsheetApp.getUi()
       .createAddonMenu()
       .addItem("Populate Call Sheet", 'populateAllCall')
-      .addItem("Set D4H Token", "showTokenDialog")
       .addItem("Coordinate Transportation", "createTransportationSheet")
+      .addItem("Email Responding Roster", "showEmailDialog")
+      .addItem("Set D4H Token", "showTokenDialog")
       //.addItem('Show sidebar', 'showSidebar')
       .addToUi();
 }
@@ -144,11 +149,11 @@ function phoneFormat(person, phonetype) {
   if (phonetype in person) {
     phone = person[phonetype];
     if (phone.length == 10) {
-      return "(" + phone.slice(0,3) + ") " + phone.slice(2,5) + "-" + phone.slice(5,9);
+      return "(" + phone.slice(0,3) + ") " + phone.slice(3,6) + "-" + phone.slice(6,10);
     }
     else if (phone.length == 11) {
       // currently removes the first character which is a '1'
-      return "(" + phone.slice(1,4) + ") " + phone.slice(3,6) + "-" + phone.slice(6,10);
+      return "(" + phone.slice(1,4) + ") " + phone.slice(4,7) + "-" + phone.slice(7,11);
     }
     return person[phonetype];
   }
@@ -203,9 +208,18 @@ function populateAllCall() {
     "",
     "",
     "Available:",
-    "=COUNTIF(D2:D,\"Y\")"
+    "=COUNTIF(D3:D,\"Y\")",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "=COUNTA(J3:J)",
+    "are home safe"
   ]);
   sheet.getRange("C1:D1").setBackground(BRIGHT_GREEN);
+  sheet.getRange("J1:K1").setBackground('orange');
+
 
   // sets up header row
   sheet.appendRow(COLUMNS);
@@ -256,12 +270,15 @@ function getMembers(on_call, offset, limit) {
   limit = typeof limit !== 'undefined' ? limit : 25;
 
   var url = Utilities.formatString('https://api.d4h.org:443/v2/team/members?'
-    + 'access_token=%s'
-    + '&on_call=%s'
+    + 'on_call=%s'
     + '&offset=%s'
-    + '&limit=%s', getToken(), on_call, offset, limit);
+    + '&limit=%s', on_call, offset, limit);
 
-  var response = UrlFetchApp.fetch(url);
+  var options = {
+    'headers': {'Authorization': 'Bearer ' + getToken()}
+  }
+  
+  var response = UrlFetchApp.fetch(url, options);
   //Logger.log(response);
 
   // Returns JSON without any explicit processing
@@ -323,6 +340,21 @@ function getAllCall() {
 }
 
 
+function getResponders() {
+  var num_people = getAllCall().length;
+
+  var spreadsheet = SpreadsheetApp.getActive();
+
+  var sheet = spreadsheet.getSheetByName(CALLOUT_SHEET_NAME);
+
+  var responders = sheet.getRange(3, 1, num_people, COLUMNS.length).getValues();
+  responders = responders.filter(function (row) {
+    return row[3] == "Y";
+  })
+
+  return responders;
+}
+
 /**
  * Goes through the call sheet and determines who is a "Y" in Responding and
  * creates a new sheet (tab) to facilitate transportation coordination.
@@ -333,10 +365,7 @@ function createTransportationSheet() {
   var spreadsheet = SpreadsheetApp.getActive();
   var sheet = spreadsheet.getSheetByName(CALLOUT_SHEET_NAME);
 
-  var responders = sheet.getRange(3, 1, num_people, COLUMNS.length).getValues();
-  responders = responders.filter(function (row) {
-    return row[3] == "Y";
-  })
+  var responders = getResponders();
 
   var responder_sheet_name = RESPONDING_SHEET_NAME;
   var responder_sheet = spreadsheet.getSheetByName(responder_sheet_name);
@@ -423,6 +452,31 @@ function showTokenDialog() {
 }
 
 /**
+ * Opens a dialog to send email to OESL. The dialog structure is described in
+ * the OESL-Email-Dialog.html project file.
+ */
+function showEmailDialog() {
+  var ui = HtmlService.createTemplateFromFile('OESL-Email-Dialog')
+
+  var responders = getResponders();
+
+  var message = "\nSMCSAR is sending " + responders.length + " to [INSERT SEARCH NAME/LOCATION] for [INSERT DATES]\n\n"
+
+  for (var i=0; i<responders.length; i++) {
+    var r = responders[i];
+    message += r[0] + " - " + r[12] + " - " + r[10] + "\n"
+  }
+
+  ui.message_body = message;
+
+  ui = ui.evaluate()
+         .setWidth(600)
+         .setHeight(400);
+
+  SpreadsheetApp.getUi().showModalDialog(ui, EMAIL_DIALOG_TITLE);
+}
+
+/**
  * Returns the value in the active cell.
  *
  * @return {String} The value of the active cell.
@@ -461,4 +515,16 @@ function modifySheets(action) {
   } else if (action == "clear") {
     currentSheet.clear();
   }
+}
+
+/* Used to send emails to OES-L or anyone else with those responding
+ * and their phone/email
+ */
+function sendEmail(email, subject, body) {
+  MailApp.sendEmail({
+    to: email,
+    subject: subject,
+    htmlBody: body,
+    cc: "dutyofficer@sanmateosar.org"
+  })
 }
