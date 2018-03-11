@@ -76,10 +76,10 @@ push files to a Google Developers Console Project.
 14. Copy your File ID from the address bar - your file id is the random string after `/d/` and before `/edit`
 15. Go to your command-line window and run `cp gapps.config.json.template gapps.config.json`.
 16. Copy this into command-line with your file id `sed i 's/changethis/<file id>/' gapps.config.json`
-16. Run `gapps upload` to push files to Google's environment
-17. If you don't see "Great success!", go to a corner and cry :sob:
-18. Go back to your web browser with your Google Drive project and refresh - you should see `code.gs` and several other HTML files
-19. If your `code.gs` is empty, you can save https://github.com/smcsar/duty-officer-addon/blob/dev/src/code.js to src/code.js and re-run `gapps upload`
+17. Run `gapps upload` to push files to Google's environment
+18. If you don't see "Great success!", go to a corner and cry :sob:
+19. Go back to your web browser with your Google Drive project and refresh - you should see `code.gs` and several other HTML files
+20. If your `code.gs` is empty, you can save https://github.com/smcsar/duty-officer-addon/blob/dev/src/code.js to src/code.js and re-run `gapps upload`
 
 ### Setup a New Fork ###
 
@@ -108,7 +108,7 @@ a new directory or on a new fork, please follow these steps:
 2. Run `gapps upload` to push your code to Google's servers
 3. Switch to the project within Google Chrome and continue testing from there:
    1.  Create a new spreadsheet in Google Drive and rename it to something you can find
-   2.  Go to your Apps Script project and select "Publish" -> "Test as Add-on"
+   2.  Go to your Apps Script project and select "Run" -> "Test as Add-on"
    3.  Under "Configure New Test", click "Select Doc"
    4.  Click "Spreadsheets" and select the sheet you created earlier and click "Select"
    5.  Click "Save"
@@ -123,7 +123,7 @@ a new directory or on a new fork, please follow these steps:
 ### Basic workflow: ###
 
 1. Open your project in Google Drive via a web browser
-2. Go to "Publish" -> "Test as Add-on" and select your previously saved test and click "Test"
+2. Go to "Run" -> "Test as Add-on" and select your previously saved test and click "Test"
 3. The sheet you previously created and associated with the test should automatically open
 4. Modify code in editor of choice (locally on your workstation)
 5. `gapps deploy dev` to sync code - ***DON'T FORGET THIS STEP AFTER EVERY CHANGE!***  (You may consider setting up something that watches the files and executes this command every time there is a change.)
