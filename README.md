@@ -74,7 +74,7 @@ push files to a Google Developers Console Project.
 12. You should see "Success! Project Changed" next to the project name
 13. Click "Close"
 14. Copy your File ID from the address bar - your file id is the random string after `/d/` and before `/edit`
-15. Go to your command-line window and run `cp gapps.config.json.template gapps.config.json`.
+15. Go to your command-line window and run `cp gapps.config.json.template gapps.config.json`
 16. Copy this into command-line with your file id `sed i 's/changethis/<file id>/' gapps.config.json`
 17. Run `gapps upload` to push files to Google's environment
 18. If you don't see "Great success!", go to a corner and cry :sob:
@@ -90,14 +90,14 @@ a new directory or on a new fork, please follow these steps:
     1. Using SSH (Mac/Linux): `git clone git@github.com:smcsar/duty-officer-addon.git`
     2. Using HTTPS (Windows/Mac/Linux): `git clone https://github.com/smcsar/duty-officer-addon.git`
 2.  `cd` into the above project
-3.  Run `gapps init -s src` to initialize the DO project
-4.  Open a web browser and goto https://drive.google.com
-5.  Select your Apps Script project that you previously created (blue icon with white arrow)
-6.  Copy your Project ID from the address bar - your project id is the random string after `/d/` and before `/edit`
-7.  Go to your command-line window and run `gapps add dev <project id>`.  This will add a deployment target called "dev"
-8.  Run `gapps deploy dev` to push files to Google's environment
-9.  If you don't see "Great success!", go to a corner and cry :sob:
-10. Go back to your web browser with your Google Drive project and refresh - you should see `code.gs` and several other HTML files
+3.  Open a web browser and goto https://drive.google.com
+4.  Select your Apps Script project that you previously created (blue icon with white arrow)
+5.  Copy your File ID from the address bar - your file id is the random string after `/d/` and before `/edit`
+6.  Go to your command-line window and run `cp gapps.config.json.template gapps.config.json`
+7.  Run `gapps upload` to push files to Google's environment
+8.  If you don't see "Great success!", go to a corner and cry :sob:
+9.  Go back to your web browser with your Google Drive project and refresh - you should see `code.gs` and several other HTML files
+10. If your `code.gs` is empty, you can save https://github.com/smcsar/duty-officer-addon/blob/dev/src/code.js to src/code.js and re-run `gapps upload`
 
 ### Testing Code the First Time ###
 

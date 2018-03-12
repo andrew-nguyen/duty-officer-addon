@@ -476,12 +476,17 @@ function showEmailDialog() {
 
   var responders = getResponders();
 
-  var message = "\nSMCSAR is sending " + responders.length + " to [INSERT SEARCH NAME/LOCATION] for [INSERT DATES]\n\n"
+  var addresses = "";
+
+  var message = "\nSMCSAR is sending " + responders.length + " to [INSERT SEARCH NAME/LOCATION] for [INSERT DATES]\n\n";
 
   for (var i=0; i<responders.length; i++) {
     var r = responders[i];
-    message += r[0] + " - " + r[12] + " - " + r[10] + "\n"
+    addresses += r[10] + ",";
+    message += r[0] + " - " + r[12] + " - " + r[10] + "\n";
   }
+
+  ui.to_addr = addresses;
 
   ui.message_body = message;
 
