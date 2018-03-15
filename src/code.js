@@ -9,7 +9,9 @@ var BRIGHT_GREEN = "#48FF05";
 
 var TOKEN_DIALOG_TITLE = 'Set D4H API Token';
 var EMAIL_DIALOG_TITLE = 'Email Responding Roster';
+var SMS_DIALOG_TITLE = 'SMS Responding Roster';
 var SIDEBAR_TITLE = 'Example Sidebar';
+var DO_EMAIL = "dutyofficer@sanmateosar.org";
 
 var COLUMNS = [
   "Name",
@@ -25,7 +27,8 @@ var COLUMNS = [
   "Email",
   "Home Phone",
   "Mobile Phone",
-  "Work Phone"
+  "Work Phone",
+  "SMS Email"
 ];
 
 var CALLOUT_SHEET_NAME = "Callout";
@@ -148,13 +151,14 @@ function onOpen(e) {
       .addItem("Populate Call Sheet", 'populateAllCall')
       .addItem("Coordinate Transportation", "createTransportationSheet")
       .addItem("Email Responding Roster", "showEmailDialog")
+      .addItem("SMS Responding Roster", "showSMSDialog")
       .addItem("Set D4H Token", "showTokenDialog")
       //.addItem('Show sidebar', 'showSidebar')
       .addToUi();
 }
 
 /* Takes a person dictionary and phonetype key
- * If phonetype isn't defined, returns the emptry string
+ * If phonetype isn't defined, returns the empty string
  * Otherwise, returns a formatted phone number, dropping the
  * leading 1 if present
  */
@@ -262,7 +266,8 @@ function populateAllCall() {
       person.email,
       phoneFormat(person, "homephone"),
       phoneFormat(person, "mobilephone"),
-      phoneFormat(person, "workphone")
+      phoneFormat(person, "workphone"),
+      person.pager_email
     ]);
 
     // sets those off call in D4H to red
@@ -421,6 +426,7 @@ function createTransportationSheet() {
       r[2], // Badge
       r[10], // email
       r[12], // mobile phone
+      r[14], // sms gateway
     ]);
   }
 
@@ -498,6 +504,36 @@ function showEmailDialog() {
 }
 
 /**
+ * Opens a dialog to send sms to OESL. The dialog structure is described in
+ * the OESL-Email-Dialog.html project file.
+ */
+function showSMSDialog() {
+  var ui = HtmlService.createTemplateFromFile('OESL-Email-Dialog')
+
+  var responders = getResponders();
+
+  var addresses = "";
+
+  var message = "\nSMCSAR is sending " + responders.length + " to [INSERT SEARCH NAME/LOCATION] for [INSERT DATES]\n\n";
+
+  for (var i=0; i<responders.length; i++) {
+    var r = responders[i];
+    addresses += r[14] + ",";
+    message += r[0] + " - " + r[12] + " - " + r[10] + "\n";
+  }
+
+  ui.to_addr = addresses;
+
+  ui.message_body = message;
+
+  ui = ui.evaluate()
+         .setWidth(600)
+         .setHeight(400);
+
+  SpreadsheetApp.getUi().showModalDialog(ui, SMS_DIALOG_TITLE);
+}
+
+/**
  * Returns the value in the active cell.
  *
  * @return {String} The value of the active cell.
@@ -546,6 +582,6 @@ function sendEmail(email, subject, body) {
     to: email,
     subject: subject,
     htmlBody: body,
-    cc: "dutyofficer@sanmateosar.org"
+    cc: DO_EMAIL
   })
 }
