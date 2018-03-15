@@ -1,3 +1,6 @@
+// Add this line with DO phone number to separate .js file in /src:
+// var DO_PHONE = "your #";
+
 var D4H_STRING = "D4H";
 var YNL_STRING = "Y / N / L";
 
@@ -266,7 +269,7 @@ function populateAllCall() {
       phoneFormat(person, "homephone"),
       phoneFormat(person, "mobilephone"),
       phoneFormat(person, "workphone"),
-      person.pager_email
+      getGateway(phoneFormat(person, "mobilephone"))
     ]);
 
     // sets those off call in D4H to red
@@ -359,6 +362,32 @@ function getAllCall() {
   return everyone;
 }
 
+function getGateway(phone) {
+  var phone1 = "1" + DO_PHONE.replace(/[^\d]/g, '');
+  var phone2 = "1" + phone.replace(/[^\d]/g, '');
+  var gateSearchString = "from:" + phone1 + "." + phone2;
+
+  var thread = GmailApp.search(gateSearchString, 0, 2)[0];
+  if (thread == undefined) {return null};
+  var message = thread.getMessages()[0];
+  var msgFrom = message.getFrom();
+  var msgTo = message.getTo();
+
+  if (msgFrom.indexOf(phone2) > -1) {return msgFrom};
+  if (msgTo.indexOf(phone2) > -1) {return msgTo};
+
+  return null;
+}
+
+function setGateway(cell) {
+  var gateway = getGateway(cell.getValue());
+  if (gateway == null) { return };
+  var range1 = SpreadsheetApp.getActiveRange();
+  var col = range1.getColumn();
+  var row = range1.getRow();
+  var range2 = SpreadsheetApp.getActiveSheet().getRange(row,col+2);
+  range2.setValue(gateway);
+}
 
 function getResponders() {
   var num_people = getAllCall().length;
