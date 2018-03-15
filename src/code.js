@@ -454,7 +454,6 @@ function createTransportationSheet() {
       r[2], // Badge
       r[10], // email
       r[12], // mobile phone
-      r[14], // sms gateway
     ]);
   }
 
