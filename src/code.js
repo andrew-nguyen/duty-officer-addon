@@ -11,7 +11,6 @@ var TOKEN_DIALOG_TITLE = 'Set D4H API Token';
 var EMAIL_DIALOG_TITLE = 'Email Responding Roster';
 var SMS_DIALOG_TITLE = 'SMS Responding Roster';
 var SIDEBAR_TITLE = 'Example Sidebar';
-var DO_EMAIL = "dutyofficer@sanmateosar.org";
 
 var COLUMNS = [
   "Name",
@@ -582,6 +581,6 @@ function sendEmail(email, subject, body) {
     to: email,
     subject: subject,
     htmlBody: body,
-    cc: DO_EMAIL
+    cc: Session.getActiveUser().getEmail()
   })
 }
