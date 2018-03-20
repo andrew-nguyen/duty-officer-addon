@@ -1,3 +1,6 @@
+// Add this line with DO phone number to separate .js file in /src:
+// var DO_PHONE = "your #";
+
 var D4H_STRING = "D4H";
 var YNL_STRING = "Y / N / L";
 
@@ -9,6 +12,9 @@ var BRIGHT_GREEN = "#48FF05";
 
 var TOKEN_DIALOG_TITLE = 'Set D4H API Token';
 var EMAIL_DIALOG_TITLE = 'Email Responding Roster';
+var EMAIL_DIALOG_SUBTITLE = "Send email for MA deployment.  Add OESL email to recipients.";
+var SMS_DIALOG_TITLE = 'SMS Responding Roster';
+var SMS_DIALOG_SUBTITLE = "Send SMS thru email gateway.";
 var SIDEBAR_TITLE = 'Example Sidebar';
 
 var COLUMNS = [
@@ -25,7 +31,8 @@ var COLUMNS = [
   "Email",
   "Home Phone",
   "Mobile Phone",
-  "Work Phone"
+  "Work Phone",
+  "SMS Email"
 ];
 
 var CALLOUT_SHEET_NAME = "Callout";
@@ -148,13 +155,14 @@ function onOpen(e) {
       .addItem("Populate Call Sheet", 'populateAllCall')
       .addItem("Coordinate Transportation", "createTransportationSheet")
       .addItem("Email Responding Roster", "showEmailDialog")
+      .addItem("SMS Responding Roster", "showSMSDialog")
       .addItem("Set D4H Token", "showTokenDialog")
       //.addItem('Show sidebar', 'showSidebar')
       .addToUi();
 }
 
 /* Takes a person dictionary and phonetype key
- * If phonetype isn't defined, returns the emptry string
+ * If phonetype isn't defined, returns the empty string
  * Otherwise, returns a formatted phone number, dropping the
  * leading 1 if present
  */
@@ -262,7 +270,8 @@ function populateAllCall() {
       person.email,
       phoneFormat(person, "homephone"),
       phoneFormat(person, "mobilephone"),
-      phoneFormat(person, "workphone")
+      phoneFormat(person, "workphone"),
+      getGateway(phoneFormat(person, "mobilephone"))
     ]);
 
     // sets those off call in D4H to red
@@ -355,6 +364,32 @@ function getAllCall() {
   return everyone;
 }
 
+function getGateway(phone) {
+  var phone1 = "1" + DO_PHONE.replace(/[^\d]/g, '');
+  var phone2 = "1" + phone.replace(/[^\d]/g, '');
+  var gateSearchString = "from:" + phone1 + "." + phone2;
+
+  var thread = GmailApp.search(gateSearchString, 0, 2)[0];
+  if (thread == undefined) {return null};
+  var message = thread.getMessages()[0];
+  var msgFrom = message.getFrom();
+  var msgTo = message.getTo();
+
+  if (msgFrom.indexOf(phone2) > -1) {return msgFrom};
+  if (msgTo.indexOf(phone2) > -1) {return msgTo};
+
+  return null;
+}
+
+function setGateway(cell) {
+  var gateway = getGateway(cell.getValue());
+  if (gateway == null) { return };
+  var range1 = SpreadsheetApp.getActiveRange();
+  var col = range1.getColumn();
+  var row = range1.getRow();
+  var range2 = SpreadsheetApp.getActiveSheet().getRange(row,col+2);
+  range2.setValue(gateway);
+}
 
 function getResponders() {
   var num_people = getAllCall().length;
@@ -468,21 +503,26 @@ function showTokenDialog() {
 }
 
 /**
- * Opens a dialog to send email to OESL. The dialog structure is described in
- * the OESL-Email-Dialog.html project file.
+ * Opens a dialog to send email to OESL and responders. The dialog structure 
+ * is described in the Email-Dialog.html project file.
  */
 function showEmailDialog() {
-  var ui = HtmlService.createTemplateFromFile('OESL-Email-Dialog')
+  var ui = HtmlService.createTemplateFromFile('Email-Dialog')
 
   var responders = getResponders();
 
-  var message = "\nSMCSAR is sending " + responders.length + " to [INSERT SEARCH NAME/LOCATION] for [INSERT DATES]\n\n"
+  var addresses = "";
+
+  var message = "\nSMCSAR is sending " + responders.length + " to [INSERT SEARCH NAME/LOCATION] for [INSERT DATES]\n\n";
 
   for (var i=0; i<responders.length; i++) {
     var r = responders[i];
-    message += r[0] + " - " + r[12] + " - " + r[10] + "\n"
+    addresses += r[10] + ",";
+    message += r[0] + " - " + r[12] + " - " + r[10] + "\n";
   }
 
+  ui.subtitle = EMAIL_DIALOG_SUBTITLE;
+  ui.to_addr = addresses;
   ui.message_body = message;
 
   ui = ui.evaluate()
@@ -490,6 +530,36 @@ function showEmailDialog() {
          .setHeight(400);
 
   SpreadsheetApp.getUi().showModalDialog(ui, EMAIL_DIALOG_TITLE);
+}
+
+/**
+ * Opens a dialog to send sms to responders. The dialog structure is described in
+ * the Email-Dialog.html project file.
+ */
+function showSMSDialog() {
+  var ui = HtmlService.createTemplateFromFile('Email-Dialog')
+
+  var responders = getResponders();
+
+  var addresses = "";
+
+  var message = "\nSMCSAR is sending " + responders.length + " to [INSERT SEARCH NAME/LOCATION] for [INSERT DATES]\n\n";
+
+  for (var i=0; i<responders.length; i++) {
+    var r = responders[i];
+    addresses += r[14] + ",";
+    message += r[0] + " - " + r[12] + " - " + r[10] + "\n";
+  }
+
+  ui.subtitle = SMS_DIALOG_SUBTITLE;
+  ui.to_addr = addresses;
+  ui.message_body = message;
+
+  ui = ui.evaluate()
+         .setWidth(600)
+         .setHeight(400);
+
+  SpreadsheetApp.getUi().showModalDialog(ui, SMS_DIALOG_TITLE);
 }
 
 /**
@@ -541,6 +611,6 @@ function sendEmail(email, subject, body) {
     to: email,
     subject: subject,
     htmlBody: body,
-    cc: "dutyofficer@sanmateosar.org"
+    cc: Session.getActiveUser().getEmail()
   })
 }
