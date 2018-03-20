@@ -12,7 +12,9 @@ var BRIGHT_GREEN = "#48FF05";
 
 var TOKEN_DIALOG_TITLE = 'Set D4H API Token';
 var EMAIL_DIALOG_TITLE = 'Email Responding Roster';
+var EMAIL_DIALOG_SUBTITLE = "Send email for MA deployment.  Add OESL email to recipients.";
 var SMS_DIALOG_TITLE = 'SMS Responding Roster';
+var SMS_DIALOG_SUBTITLE = "Send SMS thru email gateway.";
 var SIDEBAR_TITLE = 'Example Sidebar';
 
 var COLUMNS = [
@@ -501,11 +503,11 @@ function showTokenDialog() {
 }
 
 /**
- * Opens a dialog to send email to OESL. The dialog structure is described in
- * the OESL-Email-Dialog.html project file.
+ * Opens a dialog to send email to OESL and responders. The dialog structure 
+ * is described in the Email-Dialog.html project file.
  */
 function showEmailDialog() {
-  var ui = HtmlService.createTemplateFromFile('OESL-Email-Dialog')
+  var ui = HtmlService.createTemplateFromFile('Email-Dialog')
 
   var responders = getResponders();
 
@@ -519,8 +521,8 @@ function showEmailDialog() {
     message += r[0] + " - " + r[12] + " - " + r[10] + "\n";
   }
 
+  ui.subtitle = EMAIL_DIALOG_SUBTITLE;
   ui.to_addr = addresses;
-
   ui.message_body = message;
 
   ui = ui.evaluate()
@@ -531,11 +533,11 @@ function showEmailDialog() {
 }
 
 /**
- * Opens a dialog to send sms to OESL. The dialog structure is described in
- * the OESL-Email-Dialog.html project file.
+ * Opens a dialog to send sms to responders. The dialog structure is described in
+ * the Email-Dialog.html project file.
  */
 function showSMSDialog() {
-  var ui = HtmlService.createTemplateFromFile('OESL-Email-Dialog')
+  var ui = HtmlService.createTemplateFromFile('Email-Dialog')
 
   var responders = getResponders();
 
@@ -549,8 +551,8 @@ function showSMSDialog() {
     message += r[0] + " - " + r[12] + " - " + r[10] + "\n";
   }
 
+  ui.subtitle = SMS_DIALOG_SUBTITLE;
   ui.to_addr = addresses;
-
   ui.message_body = message;
 
   ui = ui.evaluate()

@@ -3,7 +3,7 @@
 
 <!-- Below is the HTML code that defines the dialog element structure. -->
 <div>
-  <p>Send email for MA deployment.</p>
+  <p><?= subtitle ?></p>
   <div class="block" class="dialog-elements">
     <label for="dialog-action-select">
       To (use commas to separate multiple addresses):
@@ -28,4 +28,4 @@
 </div>
 
 <!-- Use a templated HTML printing scriptlet to import JavaScript. -->
-<?!= HtmlService.createHtmlOutputFromFile('OESL-Email-DialogJS').getContent(); ?>
+<?!= HtmlService.createHtmlOutputFromFile('Email-DialogJS').getContent(); ?>
